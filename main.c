@@ -61,9 +61,106 @@ void setup() {
 void loop() {
   int sensorValue = analogRead(A0);
   Serial << sensorValue << endl;
-  tm.reset();
-  buttons = tm.readButtons();
-  tm.displayIntNum(buttons);
+  Serial.println(sensorValue);
+  float responseDelay = 90000 * sensorValue / 100;
+    if (responseDelay == 0) {
+        responseDelay = 90000;
+    }
+    if (responseDelay < 90000) {
+        responseDelay = 90000;
+    }
+    int intRespDelay = round(responseDelay);
+    Serial.print("Delay: ");
+    Serial.println(intRespDelay);
+    tm.reset();
+    buttons = tm.readButtons();
+    tm.displayIntNum(sensorValue);
+    uint16_t leds = 0b011111111;
+
+    Serial.print("Setting LEDs: ");
+    if (intRespDelay < 100000) {
+    tm.setLED(0, 1);
+    tm.setLED(1, 0);
+    tm.setLED(2, 0);
+    tm.setLED(3, 0);
+    tm.setLED(4, 0);
+    tm.setLED(5, 0);
+    tm.setLED(6, 0);
+    tm.setLED(7, 0);
+    } else if (intRespDelay > 240000) {
+        tm.setLED(0, 1);
+        tm.setLED(1, 1);
+        tm.setLED(2, 1);
+        tm.setLED(3, 1);
+        tm.setLED(4, 1);
+        tm.setLED(5, 1);
+        tm.setLED(6, 1);
+        tm.setLED(7, 1);
+    } else if (intRespDelay > 220000) {
+        tm.setLED(0, 1);
+        tm.setLED(1, 1);
+        tm.setLED(2, 1);
+        tm.setLED(3, 1);
+        tm.setLED(4, 1);
+        tm.setLED(5, 1);
+        tm.setLED(6, 1);
+        tm.setLED(7, 0);
+    } else if (intRespDelay > 200000) {
+        tm.setLED(0, 1);
+        tm.setLED(1, 1);
+        tm.setLED(2, 1);
+        tm.setLED(3, 1);
+        tm.setLED(4, 1);
+        tm.setLED(5, 1);
+        tm.setLED(6, 0);
+        tm.setLED(7, 0);
+    } else if (intRespDelay > 180000) {
+        tm.setLED(0, 1);
+        tm.setLED(1, 1);
+        tm.setLED(2, 1);
+        tm.setLED(3, 1);
+        tm.setLED(4, 1);
+        tm.setLED(5, 0);
+        tm.setLED(6, 0);
+        tm.setLED(7, 0);
+    } else if (intRespDelay > 160000) {
+        tm.setLED(0, 1);
+        tm.setLED(1, 1);
+        tm.setLED(2, 1);
+        tm.setLED(3, 1);
+        tm.setLED(4, 0);
+        tm.setLED(5, 0);
+        tm.setLED(6, 0);
+        tm.setLED(7, 0);
+    } else if (intRespDelay > 140000) {
+        tm.setLED(0, 1);
+        tm.setLED(1, 1);
+        tm.setLED(2, 1);
+        tm.setLED(3, 0);
+        tm.setLED(4, 0);
+        tm.setLED(5, 0);
+        tm.setLED(6, 0);
+        tm.setLED(7, 0);
+    } else if (intRespDelay > 120000) {
+        tm.setLED(0, 1);
+        tm.setLED(1, 1);
+        tm.setLED(2, 0);
+        tm.setLED(3, 0);
+        tm.setLED(4, 0);
+        tm.setLED(5, 0);
+        tm.setLED(6, 0);
+        tm.setLED(7, 0);
+    } else {
+        tm.setLED(0, 1);
+        tm.setLED(1, 1);
+        tm.setLED(2, 1);
+        tm.setLED(3, 1);
+        tm.setLED(4, 1);
+        tm.setLED(5, 1);
+        tm.setLED(6, 1);
+        tm.setLED(7, 1);
+    }
+
 
   if (WiFi.status() == WL_CONNECTED) {
     String json = httpRequestAPI();
@@ -73,6 +170,7 @@ void loop() {
       parseJSON(json, data);
     }
 
+    //delay(intRespDelay);
     delay(30000);
   }
 }
