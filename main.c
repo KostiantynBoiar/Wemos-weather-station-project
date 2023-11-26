@@ -62,7 +62,7 @@ void loop() {
   int sensorValue = analogRead(A0);
   Serial << sensorValue << endl;
   Serial.println(sensorValue);
-  float responseDelay = 90000 * sensorValue / 100;
+  float responseDelay = 90000 * sensorValue / 280;
     if (responseDelay == 0) {
         responseDelay = 90000;
     }
@@ -170,8 +170,8 @@ void loop() {
       parseJSON(json, data);
     }
 
-    //delay(intRespDelay);
-    delay(30000);
+    delay(intRespDelay);
+    //delay(30000);
   }
 }
 
