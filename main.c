@@ -10,24 +10,24 @@
 #include <Adafruit_SSD1306.h>
 #include <ArduinoJson.h> // Include library for working with JSON
 
-#define STROBE_TM 14 // Strobe = GPIO connected to strobe line of the module
-#define CLOCK_TM 12  // Clock = GPIO connected to clock line of the module
-#define DIO_TM 13    // Data = GPIO connected to data line of the module
+#define STROBE_TM 14
+#define CLOCK_TM 12
+#define DIO_TM 13
 
 #define OLED_RESET -1
 #define OLED_SCREEN_I2C_ADDRESS 0x3C
-#define SCREEN_WIDTH 128  // OLED display width, in pixels
-#define SCREEN_HEIGHT 64  // OLED display height, in pixels
+#define SCREEN_WIDTH 128
+#define SCREEN_HEIGHT 64
 
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 bool high_freq = false;
 TM1638plus tm(STROBE_TM, CLOCK_TM, DIO_TM, high_freq);
 WiFiClient wifiClient;
-byte buttons;
+byte buttons = 0;
 
-const String cities[] = {"Dundee", "London", "Kyiv", "Warshaw"};
-const int JSON_CAPACITY = 1024; // JSON buffer size
-const int ARRAY_SIZE = 6;       // Array size to store JSON data
+const String cities[] = {"Dundee", "London", "Kyiv", "Warsaw"};
+const int JSON_CAPACITY = 1024;
+const int ARRAY_SIZE = 6;
 
 void setup() {
   Serial.begin(115200);
@@ -64,31 +64,31 @@ void loop() {
   buttons = tm.readButtons();
   Serial << sensorValue << endl;
   Serial.println(sensorValue);
-  float responseDelay = 90000 * sensorValue / 280;
-    if (responseDelay == 0) {
-        responseDelay = 90000;
-    }
-    if (responseDelay < 90000) {
-        responseDelay = 90000;
-    }
-    int intRespDelay = round(responseDelay);
-    Serial.print("Delay: ");
-    Serial.println(intRespDelay);
-    tm.reset();
-    buttons = tm.readButtons();
-    tm.displayIntNum(sensorValue);
-    uint16_t leds = 0b011111111;
+  float responseDelay = 90000 * sensorValue / 250;
+  if (responseDelay == 0) {
+    responseDelay = 90000;
+  }
+  if (responseDelay < 90000) {
+    responseDelay = 90000;
+  }
+  int intRespDelay = round(responseDelay);
+  Serial.print("Delay: ");
+  Serial.println(intRespDelay);
+  tm.reset();
+  buttons = tm.readButtons();
+  tm.displayIntNum(sensorValue);
+  uint16_t leds = 0b011111111;
 
     Serial.print("Setting LEDs: ");
     if (intRespDelay < 100000) {
-    tm.setLED(0, 1);
-    tm.setLED(1, 0);
-    tm.setLED(2, 0);
-    tm.setLED(3, 0);
-    tm.setLED(4, 0);
-    tm.setLED(5, 0);
-    tm.setLED(6, 0);
-    tm.setLED(7, 0);
+        tm.setLED(0, 1);
+        tm.setLED(1, 0);
+        tm.setLED(2, 0);
+        tm.setLED(3, 0);
+        tm.setLED(4, 0);
+        tm.setLED(5, 0);
+        tm.setLED(6, 0);
+        tm.setLED(7, 0);
     } else if (intRespDelay > 240000) {
         tm.setLED(0, 1);
         tm.setLED(1, 1);
@@ -166,7 +166,6 @@ void loop() {
 
   if (WiFi.status() == WL_CONNECTED) {
     float data[ARRAY_SIZE];
-
     if (buttons != 0) {
       int cityIndex = buttons - 1;
       String json = httpRequestAPI(cities[cityIndex]);
@@ -179,8 +178,14 @@ void loop() {
     }
   }
 
-  delay(intRespDelay);
-    //delay(30000);
+  unsigned long start = millis();
+  while (millis() - start < intRespDelay) {
+    if (tm.readButtons() != 0) {
+      break;
+    }
+    delay(50);
+  }
+  //delay(10000);
   }
 
 
@@ -272,7 +277,14 @@ void parseJSON(String jsonString, float* dataArray, String city) {
     display.print("Temperature: ");
     display.println(dataArray[2]);
 
+    display.print("Feels like: ");
+    display.println(dataArray[3]);
 
+    display.print("Temperature min: ");
+    display.println(dataArray[4]);
+
+    display.print("Temperature: ");
+    display.println(dataArray[5]);
     display.display();
   }
 }
