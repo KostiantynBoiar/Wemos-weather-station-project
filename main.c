@@ -25,6 +25,7 @@ TM1638plus tm(STROBE_TM, CLOCK_TM, DIO_TM, high_freq);
 WiFiClient wifiClient;
 byte buttons;
 
+const String cities[] = {"Dundee", "London", "Kyiv", "Warshaw"};
 const int JSON_CAPACITY = 1024; // JSON buffer size
 const int ARRAY_SIZE = 6;       // Array size to store JSON data
 
@@ -43,7 +44,7 @@ void setup() {
   while (WiFi.status() != WL_CONNECTED) {
     delay(1000);
     display.clearDisplay();
-    display << "Connecting to Wi-Fi..." << endl;
+    display.println("Connecting to Wi-Fi...");
     display.display();
     display.setCursor(0, 0);
   }
@@ -51,7 +52,7 @@ void setup() {
   display.setCursor(0, 0);
   delay(1000);
   display.clearDisplay();
-  display << "Connected to Wi-Fi" << endl;
+  display.println("Connected to Wi-Fi");
   display.display();
   tm.displayBegin();
   tm.reset();
@@ -60,6 +61,7 @@ void setup() {
 
 void loop() {
   int sensorValue = analogRead(A0);
+  buttons = tm.readButtons();
   Serial << sensorValue << endl;
   Serial.println(sensorValue);
   float responseDelay = 90000 * sensorValue / 280;
@@ -163,21 +165,28 @@ void loop() {
 
 
   if (WiFi.status() == WL_CONNECTED) {
-    String json = httpRequestAPI();
-    Serial.println(json);
-    if (json != "") {
-      float data[ARRAY_SIZE];
-      parseJSON(json, data);
-    }
+    float data[ARRAY_SIZE];
 
-    delay(intRespDelay);
+    if (buttons != 0) {
+      int cityIndex = buttons - 1;
+      String json = httpRequestAPI(cities[cityIndex]);
+      if (json != "") {
+        parseJSON(json, data, cities[cityIndex]);
+      }
+    } else {
+      String json = httpRequestAPI(cities[0]);
+      parseJSON(json, data, cities[0]);
+    }
+  }
+
+  delay(intRespDelay);
     //delay(30000);
   }
-}
 
-String httpRequestAPI() {
+
+String httpRequestAPI(String city) {
   HTTPClient http;
-  String payload = ""; // Declare payload outside the if block
+  String payload = "";
 
   display.clearDisplay();
   display.setCursor(0, 0);
@@ -186,33 +195,12 @@ String httpRequestAPI() {
 
   Serial.println("Making HTTP request...");
 
-  http.begin(wifiClient, "http://api.openweathermap.org/data/2.5/weather?q=Dundee&appid=7bd4c1a3770fadf28a2bc466ad637d3b&units=metric");
+  String url = "http://api.openweathermap.org/data/2.5/weather?q=" + city + "&appid=7bd4c1a3770fadf28a2bc466ad637d3b&units=metric";
+  http.begin(wifiClient, url);
   int httpCode = http.GET();
 
-  Serial.print("HTTP Code: ");
-  Serial.println(httpCode);
-
   if (httpCode > 0) {
-    payload = http.getString(); // Assign response body to payload
-    Serial.println("Response payload:");
-    //Serial.println(payload);
-
-    display.clearDisplay();
-    display.setCursor(0, 0);
-    display.println("Response payload:");
-    display.display();
-
-    int displayLength = payload.length();
-    int displayWidth = 128; // Assuming a line on your display is 128 characters wide
-    int numOfLines = displayLength / displayWidth;
-    for (int i = 0; i <= numOfLines; ++i) {
-      int endIndex = min((i + 1) * displayWidth, displayLength);
-      String finalString = payload.substring(i * displayWidth, endIndex);
-      //display.println(finalString);
-
-      display.display();
-      delay(1000); // Add a delay between chunks for readability (optional)
-    }
+    payload = http.getString();
   } else {
     Serial.println("Failed to connect or receive response");
 
@@ -223,11 +211,11 @@ String httpRequestAPI() {
   }
 
   http.end();
-  return payload; // Return the response payload
+  return payload;
 }
 
 
-void parseJSON(String jsonString, float* dataArray) {
+void parseJSON(String jsonString, float* dataArray, String city) {
   DynamicJsonDocument doc(JSON_CAPACITY);
 
   DeserializationError error = deserializeJson(doc, jsonString);
@@ -276,6 +264,16 @@ void parseJSON(String jsonString, float* dataArray) {
     Serial.print(i);
     Serial.print(": ");
     Serial.println(dataArray[i]);
+    display.clearDisplay();
+    display.setCursor(0, 0);
+    display.print("City: ");
+    display.println(city);
+
+    display.print("Temperature: ");
+    display.println(dataArray[2]);
+
+
+    display.display();
   }
 }
 
