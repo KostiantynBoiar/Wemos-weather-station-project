@@ -1,7 +1,6 @@
 #include <ESP8266HTTPClient.h>
 #include <Wire.h>
 #include <Streaming.h>
-#include <DS3231.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -11,7 +10,6 @@
 #include <Adafruit_SSD1306.h>
 #include <ArduinoJson.h> // Include library for working with JSON
 
-#define LED_PIN 2
 #define STROBE_TM 14
 #define CLOCK_TM 12
 #define DIO_TM 13
@@ -26,20 +24,13 @@ bool high_freq = false;
 TM1638plus tm(STROBE_TM, CLOCK_TM, DIO_TM, high_freq);
 WiFiClient wifiClient;
 byte buttons = 0;
-DS3231 rtc;
 
-const String cities[] = {"Dundee", "London", "Edinburgh", "Warsaw", "Glasgow", "Zaporizhzhia", "Kyiv"};
+const String cities[] = {"Dundee", "London", "Kyiv", "Warsaw", "Edinburgh", "Glasgow", "Zaporizhzhia", "Dubai"};
 const int JSON_CAPACITY = 1024;
 const int ARRAY_SIZE = 6;
 
-bool century = false;
-bool h12Flag;
-bool pmFlag;
-
 void setup() {
   Serial.begin(115200);
-  rtc.setClockMode(false);
-  Serial << (F("\nDS3231 Hi Precision Real Time Clock")) << endl;
   tm.displayBegin();
   display.begin(SSD1306_SWITCHCAPVCC, OLED_SCREEN_I2C_ADDRESS);
   display.display();
@@ -47,7 +38,7 @@ void setup() {
   display.setCursor(0, 0);
   display.setTextSize(1);
   display.setTextColor(WHITE);
-  pinMode(LED_PIN, OUTPUT);
+
   WiFi.begin("VM7342892", "w6hkNcgvdc8t");
   Serial.println("Hi there!");
   while (WiFi.status() != WL_CONNECTED) {
@@ -69,10 +60,6 @@ void setup() {
 }
 
 void loop() {
-  Serial << rtc.getDate() << "/" << rtc.getMonth(century) << "/" << rtc.getYear() << " " ;
-  Serial << rtc.getHour(h12Flag, pmFlag) << ":" << rtc.getMinute() << ":" << 
-  rtc.getSecond() << endl; 
-  delay(1000); // do nothing
   int sensorValue = analogRead(A0);
   buttons = tm.readButtons();
   Serial << sensorValue << endl;
@@ -178,10 +165,39 @@ void loop() {
 
 
   if (WiFi.status() == WL_CONNECTED) {
-    digitalWrite(LED_PIN, HIGH);
     float data[ARRAY_SIZE];
     if (buttons != 0) {
-      int cityIndex = buttons - 1;
+      int cityIndex = 0;
+      switch (buttons) {
+        case 1:
+          cityIndex = 0;
+          break;
+        case 2:
+          cityIndex = 1;
+          break;
+        case 4:
+          cityIndex = 2;
+          break;
+        case 8:
+          cityIndex = 3;
+          break;
+        case 16:
+          cityIndex = 4;
+          break;
+        case 32:
+          cityIndex = 5;
+          break;
+        case 64:
+          cityIndex = 6;
+          break;
+        case 128:
+          cityIndex = 7;
+          break;
+        default:
+          cityIndex = 0;
+          break;
+      }
+
       String json = httpRequestAPI(cities[cityIndex]);
       if (json != "") {
         parseJSON(json, data, cities[cityIndex]);
@@ -302,4 +318,3 @@ void parseJSON(String jsonString, float* dataArray, String city) {
     display.display();
   }
 }
-
