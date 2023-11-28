@@ -1,6 +1,7 @@
 #include <ESP8266HTTPClient.h>
 #include <Wire.h>
 #include <Streaming.h>
+#include <DS3231.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -10,6 +11,7 @@
 #include <Adafruit_SSD1306.h>
 #include <ArduinoJson.h> // Include library for working with JSON
 
+#define LED_PIN 2
 #define STROBE_TM 14
 #define CLOCK_TM 12
 #define DIO_TM 13
@@ -24,13 +26,20 @@ bool high_freq = false;
 TM1638plus tm(STROBE_TM, CLOCK_TM, DIO_TM, high_freq);
 WiFiClient wifiClient;
 byte buttons = 0;
+DS3231 rtc;
 
-const String cities[] = {"Dundee", "London", "Kyiv", "Warsaw"};
+const String cities[] = {"Dundee", "London", "Edinburgh", "Warsaw", "Glasgow", "Zaporizhzhia", "Kyiv"};
 const int JSON_CAPACITY = 1024;
 const int ARRAY_SIZE = 6;
 
+bool century = false;
+bool h12Flag;
+bool pmFlag;
+
 void setup() {
   Serial.begin(115200);
+  rtc.setClockMode(false);
+  Serial << (F("\nDS3231 Hi Precision Real Time Clock")) << endl;
   tm.displayBegin();
   display.begin(SSD1306_SWITCHCAPVCC, OLED_SCREEN_I2C_ADDRESS);
   display.display();
@@ -38,7 +47,7 @@ void setup() {
   display.setCursor(0, 0);
   display.setTextSize(1);
   display.setTextColor(WHITE);
-
+  pinMode(LED_PIN, OUTPUT);
   WiFi.begin("VM7342892", "w6hkNcgvdc8t");
   Serial.println("Hi there!");
   while (WiFi.status() != WL_CONNECTED) {
@@ -60,6 +69,10 @@ void setup() {
 }
 
 void loop() {
+  Serial << rtc.getDate() << "/" << rtc.getMonth(century) << "/" << rtc.getYear() << " " ;
+  Serial << rtc.getHour(h12Flag, pmFlag) << ":" << rtc.getMinute() << ":" << 
+  rtc.getSecond() << endl; 
+  delay(1000); // do nothing
   int sensorValue = analogRead(A0);
   buttons = tm.readButtons();
   Serial << sensorValue << endl;
@@ -165,6 +178,7 @@ void loop() {
 
 
   if (WiFi.status() == WL_CONNECTED) {
+    digitalWrite(LED_PIN, HIGH);
     float data[ARRAY_SIZE];
     if (buttons != 0) {
       int cityIndex = buttons - 1;
@@ -283,7 +297,7 @@ void parseJSON(String jsonString, float* dataArray, String city) {
     display.print("Temperature min: ");
     display.println(dataArray[4]);
 
-    display.print("Temperature: ");
+    display.print("Temperature max: ");
     display.println(dataArray[5]);
     display.display();
   }
