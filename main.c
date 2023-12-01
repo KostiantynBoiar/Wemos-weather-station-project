@@ -5,10 +5,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ESP8266WiFi.h>
-#include <TM1638plus.h> // Include the library
+#include <TM1638plus.h> 
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
-#include <ArduinoJson.h> // Include library for working with JSON
+#include <ArduinoJson.h> 
 
 #define STROBE_TM 14
 #define CLOCK_TM 12
@@ -26,7 +26,7 @@ WiFiClient wifiClient;
 byte buttons = 0;
 
 const String cities[] = {"Dundee", "London", "Kyiv", "Warsaw", "Edinburgh", "Glasgow", "Zaporizhzhia", "Dubai"};
-const int JSON_CAPACITY = 1024;
+//const int JSON_CAPACITY = 1024;
 const int ARRAY_SIZE = 6;
 
 void setup() {
@@ -40,7 +40,7 @@ void setup() {
   display.setTextColor(WHITE);
 
   WiFi.begin("VM7342892", "w6hkNcgvdc8t");
-  Serial.println("Hi there!");
+
   while (WiFi.status() != WL_CONNECTED) {
     delay(1000);
     display.clearDisplay();
@@ -76,7 +76,7 @@ void loop() {
   Serial.println(intRespDelay);
   tm.reset();
   buttons = tm.readButtons();
-  tm.displayIntNum(sensorValue);
+  //tm.displayIntNum(sensorValue);
   uint16_t leds = 0b011111111;
 
     Serial.print("Setting LEDs: ");
@@ -299,6 +299,7 @@ void parseJSON(String jsonString, float* dataArray, String city) {
     Serial.print(i);
     Serial.print(": ");
     Serial.println(dataArray[i]);
+    tm.displayIntNum(round(temperature) * 1000000);
     display.clearDisplay();
     display.setCursor(0, 0);
     display.print("City: ");
